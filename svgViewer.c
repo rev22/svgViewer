@@ -127,9 +127,7 @@ int main(int argc, char *argv[]) {
 	{
 		//cairo_scale (cr, screen->w, screen->h);
 
-	  {
-	    
-	    
+	  {  
 	    rsvg_handle_render_cairo(handle, cr2);
 	    
 	    status = cairo_status(cr2);
