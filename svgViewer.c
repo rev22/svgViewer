@@ -33,11 +33,9 @@
 #include <stdlib.h>
 #include <librsvg/rsvg.h>
 #include <librsvg/rsvg-cairo.h>
+#include <getopt.h>
 
 #include "./cairosdl/cairosdl.h"
-
-#define FAIL(msg)							\
-    do { fprintf (stderr, "FAIL: %s\n", msg); exit (-1); } while (0)
 
 #define PIXELS_PER_POINT 1
 
@@ -65,6 +63,18 @@ static SDL_Surface *init_screen(int width, int height, int bpp) {
 	return screen;
 }
 
+static int verbose_flag;
+static int debug_flag;
+
+static const struct option long_options[] = {
+  /* These options set a flag. */
+  {"verbose", no_argument,       &verbose_flag, 1},
+  {"debug",   no_argument,       &debug_flag, 1},
+  {0, 0, 0, 0}
+};
+
+#define FAIL(x...) do { fprintf(stderr, x); exit(EXIT_FAILURE); } while (0)
+#define DEBUG(x...) do { if (debug_flag) fprintf(stderr, x); } while (0)
 
 int main(int argc, char *argv[]) {
 	SDL_Surface *screen;
@@ -72,15 +82,27 @@ int main(int argc, char *argv[]) {
 	GError *error = NULL;
 	RsvgHandle *handle;
 	RsvgDimensionData dim;
-	double width, height;
-	const char *filename = argv[1];
+	int width, height;
+	char *filename;
 	//const char *output_filename = argv[2];
 	cairo_surface_t *surface;
 	cairo_t *cr;
 	cairo_status_t status;
+	int c;
 
-	if (argc != 2)
-		FAIL("usage: svg2pdf input_file.svg");
+	/* Process options */
+	while (1) {
+	  int option_index = 0;
+	  
+	  c = getopt_long (argc, argv, "d:v:",
+			   long_options, &option_index);
+	  
+	  /* Detect the end of the options. */
+	  if (c == -1) break;
+	}
+     
+	if (argc != optind+1) FAIL("Usage: %s OPTIONS input_file.svg\n", argv[0]);
+	filename = argv[optind];
 
 	g_type_init();
 
@@ -93,8 +115,9 @@ int main(int argc, char *argv[]) {
 	width = dim.width;
 	height = dim.height;
 
-/* Initialize SDL, open a screen */
-	screen = init_screen(width*2, height*2, 32);
+	/* Initialize SDL, open a screen */
+	DEBUG("Initializing SDL screen: %dx%d\n", width, height);
+	screen = init_screen(width, height, 32);
 
 	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
 	//surface = cairo_pdf_surface_create (output_filename, width, height);
