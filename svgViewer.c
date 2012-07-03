@@ -164,6 +164,33 @@ int main(int argc, char *argv[]) {
 	  SDL_Event event;
 	  while (SDL_WaitEvent(&event)) {
 	    switch (event.type) {
+	    case SDL_KEYDOWN:
+	      switch (event.key.keysym.sym) {
+	      case SDLK_ESCAPE:
+		goto exit;
+	      default:
+		break;
+	      }
+	      break;
+	    case SDL_VIDEORESIZE:
+	      {
+		width = event.resize.w;
+		height = event.resize.h;
+		cairo_surface_destroy(surface);
+		surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
+		cairo_destroy(cr2);
+		cr2 = cairo_create (surface);
+		cairo_scale(cr2, ((double)width)/dim.width, ((double)height)/dim.height);
+		rsvg_handle_render_cairo(handle, cr2);
+		cairosdl_destroy(cr);
+		screen = init_screen(width, height, 32);
+		cr = cairosdl_create(screen);
+		cairo_save(cr);
+		cairo_set_source_surface (cr, surface, 0, 0);
+		cairo_paint(cr);
+		cairo_restore(cr);
+	      };
+	      break;
 	    case SDL_QUIT:
 	      goto exit;
 	    default:
