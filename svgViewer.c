@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 
 	  if (1) {
 		cairo_save(cr);
-		cairo_scale(cr, .5, .5);
+		//cairo_scale(cr, .5, .5);
 		//cairo_translate(cr, width/2, height/2 );
 		//cairo_rotate( cr, 3.14/2 );
 		//cairo_translate(cr, -width/2, -height/2 );
