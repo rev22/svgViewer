@@ -153,19 +153,9 @@ int main(int argc, char *argv[]) {
 
 		cairo_restore(cr);
 	  }
-	  if (0) {
-		cairo_scale(cr, .5, .5);
-		//cairo_translate(cr, width/2, height/2 );
-		//cairo_rotate( cr, 3.14*1.5 );
-		//cairo_translate(cr, -width/2, -height/2 );
-		
-		cairo_set_source_surface (cr, surface, width, height);
-		cairo_paint (cr);
-	  }
-
-		status = cairo_status(cr);
-		if (status)
-			FAIL(cairo_status_to_string(status));
+	  status = cairo_status(cr);
+	  if (status)
+	    FAIL(cairo_status_to_string(status));
 
 	}
 	// SDL_UnlockSurface(screen);
