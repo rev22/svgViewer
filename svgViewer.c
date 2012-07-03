@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
 	//const char *output_filename = argv[2];
 	cairo_surface_t *surface;
 	cairo_t *cr;
+	cairo_t *cr2;
 	cairo_status_t status;
 	int c;
 
@@ -120,13 +121,13 @@ int main(int argc, char *argv[]) {
 	screen = init_screen(width, height, 32);
 
 	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
+	cr2 = cairo_create (surface); 
 	//surface = cairo_pdf_surface_create (output_filename, width, height);
 	// SDL_LockSurface(screen);
 	{
 		//cairo_scale (cr, screen->w, screen->h);
 
 	  {
-	    cairo_t *cr2 = cairo_create (surface); 
 	    
 	    
 	    rsvg_handle_render_cairo(handle, cr2);
@@ -179,7 +180,7 @@ int main(int argc, char *argv[]) {
 	if (status)
 		FAIL(cairo_status_to_string(status));
 
-	cairo_destroy (cr);
+	cairo_destroy (cr2);
 	SDL_Quit();
 	exit(EXIT_SUCCESS);
 }
