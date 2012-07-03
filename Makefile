@@ -15,8 +15,8 @@ svgViewer: svgViewer.o cairosdl.o
 cairosdl.o: ./cairosdl/cairosdl.c ./cairosdl/cairosdl.h
 	$(CC) $(CFLAGS) -c ./cairosdl/cairosdl.c
 
-%.o: %.cpp %.h
-	$(CC) $(CFLAGS) -c $*.cpp
+%.o: %.c %.h
+	$(CC) $(CFLAGS) -c $*.c
 
 test: svgViewer
 	./svgViewer tiger.svg
@@ -28,4 +28,4 @@ clean:
 	rm -f *.o *~	
 
 indent: 
-	indent -kr -i8 -brf *.cpp *.h
+	indent -kr -i8 -brf *.c *.cpp *.h

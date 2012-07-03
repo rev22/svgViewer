@@ -53,7 +53,7 @@ static SDL_Surface *init_screen(int width, int height, int bpp) {
 
 	/* Open a screen with the specified properties */
 	screen = SDL_SetVideoMode(width, height, bpp,
-				  SDL_HWSURFACE | SDL_RESIZABLE);
+				  SDL_SWSURFACE | SDL_RESIZABLE);
 	if (screen == NULL) {
 		fprintf(stderr, "Unable to set %ix%i video: %s\n",
 			width, height, SDL_GetError());
@@ -96,25 +96,29 @@ int main(int argc, char *argv[]) {
 /* Initialize SDL, open a screen */
 	screen = init_screen(width*2, height*2, 32);
 
+	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
 	//surface = cairo_pdf_surface_create (output_filename, width, height);
-	SDL_LockSurface(screen); {
+	// SDL_LockSurface(screen);
+	{
 		//cairo_scale (cr, screen->w, screen->h);
 
-		cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
-        	cairo_t *cr2 = cairo_create (surface); 
-		
-		
-		rsvg_handle_render_cairo(handle, cr2);
-		
-		status = cairo_status(cr2);
-		if (status)
-			FAIL(cairo_status_to_string(status));
-	
-		cr = cairosdl_create(screen);
+	  {
+	    cairo_t *cr2 = cairo_create (surface); 
+	    
+	    
+	    rsvg_handle_render_cairo(handle, cr2);
+	    
+	    status = cairo_status(cr2);
+	    if (status)
+	      FAIL(cairo_status_to_string(status));
+	    
+	    cr = cairosdl_create(screen);
+	  }
 
-		cairo_set_source_rgb(cr, 1, 1, 1);
-		cairo_paint(cr);
+		// cairo_set_source_rgb(cr, 1, 1, 1);
+		// cairo_paint(cr);
 
+	  if (1) {
 		cairo_save(cr);
 		cairo_scale(cr, .5, .5);
 		//cairo_translate(cr, width/2, height/2 );
@@ -125,6 +129,8 @@ int main(int argc, char *argv[]) {
 		cairo_paint(cr);
 
 		cairo_restore(cr);
+	  }
+	  if (0) {
 		cairo_scale(cr, .5, .5);
 		//cairo_translate(cr, width/2, height/2 );
 		//cairo_rotate( cr, 3.14*1.5 );
@@ -132,27 +138,35 @@ int main(int argc, char *argv[]) {
 		
 		cairo_set_source_surface (cr, surface, width, height);
 		cairo_paint (cr);
-
+	  }
 
 		status = cairo_status(cr);
 		if (status)
 			FAIL(cairo_status_to_string(status));
 
-		cairosdl_destroy(cr);
 	}
-	SDL_UnlockSurface(screen);
-	SDL_Flip(screen);
+	// SDL_UnlockSurface(screen);
+	SDL_UpdateRect(screen, 0, 0, 0, 0);
 
+	{
+	  SDL_Event event;
+	  while (SDL_WaitEvent(&event)) {
+	    switch (event.type) {
+	    case SDL_QUIT:
+	      goto exit;
+	    default:
+	      break;
+	    }
+	    SDL_UpdateRect(screen, 0, 0, 0, 0);
+	  };
+	};
+
+ exit:
+	cairosdl_destroy(cr);
 	if (status)
 		FAIL(cairo_status_to_string(status));
 
-	//cairo_destroy (cr);
-
-
-
-
-
-	while (true);
-
-	return 0;
+	cairo_destroy (cr);
+	SDL_Quit();
+	exit(EXIT_SUCCESS);
 }
