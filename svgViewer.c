@@ -142,22 +142,20 @@ int main(int argc, char *argv[]) {
 		// cairo_set_source_rgb(cr, 1, 1, 1);
 		// cairo_paint(cr);
 
-	  if (1) {
-		cairo_save(cr);
-		//cairo_scale(cr, .5, .5);
-		//cairo_translate(cr, width/2, height/2 );
-		//cairo_rotate( cr, 3.14/2 );
-		//cairo_translate(cr, -width/2, -height/2 );
-		
-		cairo_set_source_surface (cr, surface, 0, 0);
-		cairo_paint(cr);
-
-		cairo_restore(cr);
-	  }
+	  cairo_save(cr);
+	  //cairo_scale(cr, .5, .5);
+	  //cairo_translate(cr, width/2, height/2 );
+	  //cairo_rotate( cr, 3.14/2 );
+	  //cairo_translate(cr, -width/2, -height/2 );
+	  
+	  cairo_set_source_surface (cr, surface, 0, 0);
+	  cairo_paint(cr);
+	  
+	  cairo_restore(cr);
+    
 	  status = cairo_status(cr);
 	  if (status)
 	    FAIL(cairo_status_to_string(status));
-
 	}
 	// SDL_UnlockSurface(screen);
 	SDL_UpdateRect(screen, 0, 0, 0, 0);
