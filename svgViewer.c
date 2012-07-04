@@ -141,37 +141,30 @@ int main(int argc, char *argv[]) {
 	cr2 = cairo_create (surface); 
 	//surface = cairo_pdf_surface_create (output_filename, width, height);
 	// SDL_LockSurface(screen);
-	{
-		//cairo_scale (cr, screen->w, screen->h);
+	//cairo_scale (cr, screen->w, screen->h);
+	cairo_scale(cr2, zoom, zoom);
+	rsvg_handle_render_cairo(handle, cr2);
+	status = cairo_status(cr2);
+	if (status)
+	  FAIL(cairo_status_to_string(status));
+	cr = cairosdl_create(screen);
 
-	  {  
-	    cairo_scale(cr2, zoom, zoom);
-	    rsvg_handle_render_cairo(handle, cr2);
-	    
-	    status = cairo_status(cr2);
-	    if (status)
-	      FAIL(cairo_status_to_string(status));
-	    cr = cairosdl_create(screen);
-	  }
-
-		// cairo_set_source_rgb(cr, 1, 1, 1);
-		// cairo_paint(cr);
-
-	  cairo_save(cr);
-	  //cairo_scale(cr, .5, .5);
-	  //cairo_translate(cr, width/2, height/2 );
-	  //cairo_rotate( cr, 3.14/2 );
-	  //cairo_translate(cr, -width/2, -height/2 );
-	  
-	  cairo_set_source_surface (cr, surface, 0, 0);
-	  cairo_paint(cr);
-	  
-	  cairo_restore(cr);
-    
-	  status = cairo_status(cr);
-	  if (status)
-	    FAIL(cairo_status_to_string(status));
-	}
+	// cairo_set_source_rgb(cr, 1, 1, 1);
+	// cairo_paint(cr);
+	
+	cairo_save(cr);
+	//cairo_scale(cr, .5, .5);
+	//cairo_translate(cr, width/2, height/2 );
+	//cairo_rotate( cr, 3.14/2 );
+	//cairo_translate(cr, -width/2, -height/2 );
+	cairo_set_source_surface (cr, surface, 0, 0);
+	cairo_paint(cr);
+	cairo_restore(cr);
+	
+	status = cairo_status(cr);
+	if (status)
+	  FAIL(cairo_status_to_string(status));
+	
 	// SDL_UnlockSurface(screen);
 	SDL_UpdateRect(screen, 0, 0, 0, 0);
 
