@@ -81,8 +81,9 @@ static const struct option long_options[] = {
 #define DEBUG(x...) do { if (debug_flag) fprintf(stderr, x); } while (0)
 
 struct svgviewer_view {
+  double x, y;
   double zoom;
-  int pixel_width, pixel_height;
+  unsigned int pixel_width, pixel_height;
 };
 
 RsvgDimensionData dim;
@@ -96,6 +97,8 @@ void view_transform(cairo_t *c, struct svgviewer_view *v) {
   double cy = ih *  0.5;
   double zx = pw / iw;
   double zy = ph / ih;
+  cx += v->x * dim.width;
+  cy += v->y * dim.height;
   //cairo_translate(c, - pw * 0.5, - ph * 0.5);
   if (stretch_flag) {
     cairo_scale(c, zx *= v->zoom, zy *= v->zoom);
@@ -126,8 +129,9 @@ int main(int argc, char *argv[]) {
 	cairo_t *cr2;
 	cairo_status_t status;
 	int c;
-	double zoom = 1;
 	int rerender = 0;
+
+	vw.zoom = 1;
 
 	/* Process options */
 	while (1) {
@@ -143,8 +147,8 @@ int main(int argc, char *argv[]) {
 	    break;
 	  case 'z':
 	    errno = 0;
-	    zoom = strtod(optarg, NULL);
-	    DEBUG("Zoom set to %g\n", zoom);
+	    vw.zoom = strtod(optarg, NULL);
+	    DEBUG("Zoom set to %g\n", vw.zoom);
 	    if (errno) FAIL("Usage: -z or --zoom requires a floating point argument");
 	    break;
 	  default:
@@ -163,6 +167,7 @@ int main(int argc, char *argv[]) {
 		FAIL(error->message);
 
 	rsvg_handle_get_dimensions(handle, &dim);
+	vw.x = 0; vw.y = 0;
 	vw.pixel_width   = dim.width;
 	vw.pixel_height  = dim.height;
 	vw.zoom    = 1;
@@ -210,6 +215,22 @@ int main(int argc, char *argv[]) {
 	    switch (event.type) {
 	    case SDL_KEYDOWN:
 	      switch (event.key.keysym.sym) {
+	      case SDLK_UP:
+		vw.y -= 0.1 / vw.zoom;
+		rerender = 1;
+		break;
+	      case SDLK_DOWN:
+		vw.y += 0.1 / vw.zoom;
+		rerender = 1;
+		break;
+	      case SDLK_LEFT:
+		vw.x -= 0.1 / vw.zoom;
+		rerender = 1;
+		break;
+	      case SDLK_RIGHT:
+		vw.x += 0.1 / vw.zoom;
+		rerender = 1;
+		break;
 	      case SDLK_a:
 		vw.zoom *= 1.025;
 		rerender = 1;
@@ -217,8 +238,6 @@ int main(int argc, char *argv[]) {
 	      case SDLK_z:
 		vw.zoom /= 1.025;
 		rerender = 1;
-		break;
-	      case SDLK_RIGHT:
 		break;
 	      case SDLK_ESCAPE:
 		goto exit;
