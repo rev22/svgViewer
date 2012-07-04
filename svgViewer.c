@@ -80,13 +80,45 @@ static const struct option long_options[] = {
 #define FAIL(x...) do { fprintf(stderr, x); exit(EXIT_FAILURE); } while (0)
 #define DEBUG(x...) do { if (debug_flag) fprintf(stderr, x); } while (0)
 
+struct svgviewer_view {
+  double zoom;
+  int pixel_width, pixel_height;
+};
+
+RsvgDimensionData dim;
+
+void view_transform(cairo_t *c, struct svgviewer_view *v) {
+  double pw = (double)v->pixel_width;
+  double ph = (double)v->pixel_height;
+  double iw = (double)dim.width;
+  double ih = (double)dim.height;
+  double cx = iw *  0.5;
+  double cy = ih *  0.5;
+  double zx = pw / iw;
+  double zy = ph / ih;
+  //cairo_translate(c, - pw * 0.5, - ph * 0.5);
+  if (stretch_flag) {
+    cairo_scale(c, zx *= v->zoom, zy *= v->zoom);
+    cx *= zx; cy *= zy;
+    cx = (pw * 0.5 - cx) / zx;
+    cy = (ph * 0.5 - cy) / zy;
+  } else {
+    double z = (zx < zy) ? zx : zy;
+    z *= v->zoom;
+    cairo_scale(c, z, z);
+    cx *= z; cy *= z;
+    cx = (pw * 0.5 - cx) / z;
+    cy = (ph * 0.5 - cy) / z;
+  }
+  cairo_translate(c, cx, cy);
+}
+
 int main(int argc, char *argv[]) {
 	SDL_Surface *screen;
 
 	GError *error = NULL;
 	RsvgHandle *handle;
-	RsvgDimensionData dim;
-	int width, height;
+	struct svgviewer_view vw;
 	char *filename;
 	//const char *output_filename = argv[2];
 	cairo_surface_t *surface;
@@ -95,6 +127,7 @@ int main(int argc, char *argv[]) {
 	cairo_status_t status;
 	int c;
 	double zoom = 1;
+	int rerender = 0;
 
 	/* Process options */
 	while (1) {
@@ -130,23 +163,26 @@ int main(int argc, char *argv[]) {
 		FAIL(error->message);
 
 	rsvg_handle_get_dimensions(handle, &dim);
-	width = dim.width;
-	height = dim.height;
+	vw.pixel_width   = dim.width;
+	vw.pixel_height  = dim.height;
+	vw.zoom    = 1;
 
 	/* Initialize SDL, open a screen */
-	DEBUG("Initializing SDL screen: %dx%d\n", width, height);
-	screen = init_screen(width, height, 32);
+	DEBUG("Initializing SDL screen: %dx%d\n", vw.pixel_width, vw.pixel_height);
+	screen = init_screen(vw.pixel_width, vw.pixel_height, 32);
 
-	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
+	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, vw.pixel_width, vw.pixel_height);
 	cr2 = cairo_create (surface); 
+	//cairo_translate(cr2, ((double)dim.width)/-2, ((double)dim.height)/-2);
 	//surface = cairo_pdf_surface_create (output_filename, width, height);
 	// SDL_LockSurface(screen);
 	//cairo_scale (cr, screen->w, screen->h);
-	cairo_scale(cr2, zoom, zoom);
+	cairo_save(cr2);
+	view_transform(cr2, &vw);
 	rsvg_handle_render_cairo(handle, cr2);
 	status = cairo_status(cr2);
-	if (status)
-	  FAIL(cairo_status_to_string(status));
+	if (status) FAIL(cairo_status_to_string(status));
+	cairo_restore(cr2);
 	cr = cairosdl_create(screen);
 
 	// cairo_set_source_rgb(cr, 1, 1, 1);
@@ -174,6 +210,16 @@ int main(int argc, char *argv[]) {
 	    switch (event.type) {
 	    case SDL_KEYDOWN:
 	      switch (event.key.keysym.sym) {
+	      case SDLK_a:
+		vw.zoom *= 1.025;
+		rerender = 1;
+		break;
+	      case SDLK_z:
+		vw.zoom /= 1.025;
+		rerender = 1;
+		break;
+	      case SDLK_RIGHT:
+		break;
 	      case SDLK_ESCAPE:
 		goto exit;
 	      default:
@@ -182,39 +228,41 @@ int main(int argc, char *argv[]) {
 	      break;
 	    case SDL_VIDEORESIZE:
 	      {
-		width = event.resize.w;
-		height = event.resize.h;
-		cairo_surface_destroy(surface);
-		surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
+		vw.pixel_width = event.resize.w;
+		vw.pixel_height = event.resize.h;
 		cairo_destroy(cr2);
-		cr2 = cairo_create (surface);
-		if (stretch_flag) {
-		  cairo_scale(cr2, zoom*((double)width)/dim.width, zoom*((double)height)/dim.height);
-		} else {
-		  double x = zoom*((double)width)/dim.width;
-		  double y = zoom*((double)height)/dim.height;
-		  double z = (x < y) ? x : y;
-		  cairo_scale(cr2, z, z);
-		}
+		cairo_surface_destroy(surface);
+		surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, vw.pixel_width, vw.pixel_height);
+		cr2 = cairo_create(surface);
+		//cairo_translate(cr2, ((double)dim.width)/-2, ((double)dim.height)/-2);
+		cairo_save(cr2);
+		view_transform(cr2, &vw);
 		rsvg_handle_render_cairo(handle, cr2);
-		screen = init_screen(width, height, 32);
-		if (0) {
-		  cairo_paint(cr2);
-		  cairo_set_source_surface(cr2, surface, 0, 0);
-		} else {
-		  cairosdl_destroy(cr);
-		  cr = cairosdl_create(screen);
-		  cairo_save(cr);
-		  cairo_set_source_surface(cr, surface, 0, 0);
-		  cairo_paint(cr);
-		  cairo_restore(cr);
-		}
+		cairo_restore(cr2);
+		screen = init_screen(vw.pixel_width, vw.pixel_height, 32);
+		cairosdl_destroy(cr);
+		cr = cairosdl_create(screen);
+		cairo_save(cr);
+		cairo_set_source_surface(cr, surface, 0, 0);
+		cairo_paint(cr);
+		cairo_restore(cr);
 	      };
 	      break;
 	    case SDL_QUIT:
 	      goto exit;
 	    default:
 	      break;
+	    }
+	    if (rerender) {
+		cairo_save(cr2);
+		view_transform(cr2, &vw);
+		rsvg_handle_render_cairo(handle, cr2);
+		status = cairo_status(cr2);
+		if (status) FAIL(cairo_status_to_string(status));
+		cairo_restore(cr2);
+		cairo_set_source_surface(cr, surface, 0, 0);
+		cairo_paint(cr);
+		rerender = 0;
 	    }
 	    SDL_UpdateRect(screen, 0, 0, 0, 0);
 	  };
@@ -226,6 +274,7 @@ int main(int argc, char *argv[]) {
 		FAIL(cairo_status_to_string(status));
 
 	cairo_destroy (cr2);
+	cairo_surface_destroy(surface);
 	SDL_Quit();
 	exit(EXIT_SUCCESS);
 }
