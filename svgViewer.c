@@ -34,6 +34,7 @@
 #include <librsvg/rsvg.h>
 #include <librsvg/rsvg-cairo.h>
 #include <getopt.h>
+#include <errno.h>
 
 #include "./cairosdl/cairosdl.h"
 
@@ -63,13 +64,16 @@ static SDL_Surface *init_screen(int width, int height, int bpp) {
 	return screen;
 }
 
-static int verbose_flag;
-static int debug_flag;
+static int verbose_flag  = 0;
+static int debug_flag    = 0;
+static int stretch_flag  = 0;
 
 static const struct option long_options[] = {
   /* These options set a flag. */
-  {"verbose", no_argument,       &verbose_flag, 1},
-  {"debug",   no_argument,       &debug_flag, 1},
+  {"verbose", no_argument,        &verbose_flag,  1},
+  {"debug",   no_argument,        &debug_flag,    1},
+  {"stretch",   no_argument,        &stretch_flag,  1},
+  {"zoom",    required_argument,  NULL,           'z'},
   {0, 0, 0, 0}
 };
 
@@ -90,6 +94,7 @@ int main(int argc, char *argv[]) {
 	cairo_t *cr2;
 	cairo_status_t status;
 	int c;
+	double zoom = 1;
 
 	/* Process options */
 	while (1) {
@@ -97,9 +102,21 @@ int main(int argc, char *argv[]) {
 	  
 	  c = getopt_long (argc, argv, "d:v:",
 			   long_options, &option_index);
-	  
+
 	  /* Detect the end of the options. */
 	  if (c == -1) break;
+	  switch (c) {
+	  case 0:
+	    break;
+	  case 'z':
+	    errno = 0;
+	    zoom = strtod(optarg, NULL);
+	    DEBUG("Zoom set to %g\n", zoom);
+	    if (errno) FAIL("Usage: -z or --zoom requires a floating point argument");
+	    break;
+	  default:
+	    abort();
+	  };
 	}
      
 	if (argc != optind+1) FAIL("Usage: %s OPTIONS input_file.svg\n", argv[0]);
@@ -128,12 +145,12 @@ int main(int argc, char *argv[]) {
 		//cairo_scale (cr, screen->w, screen->h);
 
 	  {  
+	    cairo_scale(cr2, zoom, zoom);
 	    rsvg_handle_render_cairo(handle, cr2);
 	    
 	    status = cairo_status(cr2);
 	    if (status)
 	      FAIL(cairo_status_to_string(status));
-	    
 	    cr = cairosdl_create(screen);
 	  }
 
@@ -178,15 +195,27 @@ int main(int argc, char *argv[]) {
 		surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
 		cairo_destroy(cr2);
 		cr2 = cairo_create (surface);
-		cairo_scale(cr2, ((double)width)/dim.width, ((double)height)/dim.height);
+		if (stretch_flag) {
+		  cairo_scale(cr2, zoom*((double)width)/dim.width, zoom*((double)height)/dim.height);
+		} else {
+		  double x = zoom*((double)width)/dim.width;
+		  double y = zoom*((double)height)/dim.height;
+		  double z = (x < y) ? x : y;
+		  cairo_scale(cr2, z, z);
+		}
 		rsvg_handle_render_cairo(handle, cr2);
-		cairosdl_destroy(cr);
 		screen = init_screen(width, height, 32);
-		cr = cairosdl_create(screen);
-		cairo_save(cr);
-		cairo_set_source_surface (cr, surface, 0, 0);
-		cairo_paint(cr);
-		cairo_restore(cr);
+		if (0) {
+		  cairo_paint(cr2);
+		  cairo_set_source_surface(cr2, surface, 0, 0);
+		} else {
+		  cairosdl_destroy(cr);
+		  cr = cairosdl_create(screen);
+		  cairo_save(cr);
+		  cairo_set_source_surface(cr, surface, 0, 0);
+		  cairo_paint(cr);
+		  cairo_restore(cr);
+		}
 	      };
 	      break;
 	    case SDL_QUIT:
