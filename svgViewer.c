@@ -1,8 +1,7 @@
-/* gcc `pkg-config --cflags --libs librsvg-2.0 cairo-pdf` -o svg2pdf svg2pdf.c
+/*
  *
- * Copyright © 2005 Red Hat, Inc.
- * Copyright © 2006 Red Hat, Inc.
- * Copyright © 2007 Red Hat, Inc.
+ * Copyright © 2005,2006,2007 Red Hat, Inc.
+ * Copyright © 2012 Michele Bini <michele.bini@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +26,7 @@
  * Authors: Kristian Høgsberg <krh@redhat.com>
  *	    Carl Worth <cworth@redhat.com>
  *	    Behdad Esfahbod <besfahbo@redhat.com>
+ * 	    Michele Bini <michele.bini@gmail.com> (http;//github.com/rev22)
  */
 
 #include <stdio.h>
