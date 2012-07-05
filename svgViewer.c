@@ -40,40 +40,18 @@
 
 #define PIXELS_PER_POINT 1
 
-static SDL_Surface *init_screen(int width, int height, int bpp) {
-	SDL_Surface *screen;
-
-	/* Initialize SDL */
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
-		fprintf(stderr, "Unable to initialize SDL: %s\n",
-			SDL_GetError());
-		exit(1);
-	}
-
-	/* Open a screen with the specified properties */
-	screen = SDL_SetVideoMode(width, height, bpp,
-				  SDL_SWSURFACE | SDL_RESIZABLE);
-	if (screen == NULL) {
-		fprintf(stderr, "Unable to set %ix%i video: %s\n",
-			width, height, SDL_GetError());
-		exit(1);
-	}
-
-	SDL_WM_SetCaption("testing", "ICON");
-
-	return screen;
-}
-
-static int verbose_flag  = 0;
-static int debug_flag    = 0;
-static int stretch_flag  = 0;
+static int verbose_flag     = 0;
+static int debug_flag       = 0;
+static int stretch_flag     = 0;
+static int fullscreen_flag  = 0;
 
 static const struct option long_options[] = {
   /* These options set a flag. */
-  {"verbose", no_argument,        &verbose_flag,  1},
-  {"debug",   no_argument,        &debug_flag,    1},
-  {"stretch",   no_argument,        &stretch_flag,  1},
-  {"zoom",    required_argument,  NULL,           'z'},
+  {"verbose", no_argument,        &verbose_flag,     1},
+  {"debug",   no_argument,        &debug_flag,       1},
+  {"stretch", no_argument,        &stretch_flag,     1},
+  {"fullscreen",   no_argument,   &fullscreen_flag,  1},
+  {"zoom",    required_argument,  NULL,              'z'},
   {0, 0, 0, 0}
 };
 
@@ -131,6 +109,7 @@ int main(int argc, char *argv[]) {
 	int c;
 	int rerender = 0;
 
+	SDL_VideoInfo* info;
 	vw.zoom = 1;
 
 	/* Process options */
@@ -168,13 +147,41 @@ int main(int argc, char *argv[]) {
 
 	rsvg_handle_get_dimensions(handle, &dim);
 	vw.x = 0; vw.y = 0;
-	vw.pixel_width   = dim.width;
-	vw.pixel_height  = dim.height;
 	vw.zoom    = 1;
 
-	/* Initialize SDL, open a screen */
-	DEBUG("Initializing SDL screen: %dx%d\n", vw.pixel_width, vw.pixel_height);
-	screen = init_screen(vw.pixel_width, vw.pixel_height, 32);
+	/* Initialize SDL */
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
+		fprintf(stderr, "Unable to initialize SDL: %s\n",
+			SDL_GetError());
+		exit(1);
+	}
+
+	int videomodeflags;
+	if (fullscreen_flag) {
+	  screen = SDL_SetVideoMode(0, 0, 32,
+				    videomodeflags =
+				    SDL_FULLSCREEN | SDL_SWSURFACE | SDL_RESIZABLE);
+	} else {
+	  const SDL_VideoInfo* info = SDL_GetVideoInfo(); 
+	  if ((dim.width  >= info->current_w) ||
+	      (dim.height >= info->current_h)) {
+	    screen = SDL_SetVideoMode(0, 0, 32,
+				      videomodeflags =
+				      SDL_SWSURFACE | SDL_RESIZABLE);
+	  } else {
+	    screen = SDL_SetVideoMode(dim.width, dim.height, 32,
+				      videomodeflags =
+				      SDL_SWSURFACE | SDL_RESIZABLE);
+	  }
+	}
+
+	if (screen == NULL) {
+	  fprintf(stderr, "Unable to set video mode: %s\n", SDL_GetError());
+	  exit(1);
+	}
+	
+	vw.pixel_width   = screen->w;
+	vw.pixel_height  = screen->h;
 
 	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, vw.pixel_width, vw.pixel_height);
 	cr2 = cairo_create (surface); 
@@ -258,7 +265,7 @@ int main(int argc, char *argv[]) {
 		view_transform(cr2, &vw);
 		rsvg_handle_render_cairo(handle, cr2);
 		cairo_restore(cr2);
-		screen = init_screen(vw.pixel_width, vw.pixel_height, 32);
+		screen = SDL_SetVideoMode(event.resize.w, event.resize.h, 32, videomodeflags);
 		cairosdl_destroy(cr);
 		cr = cairosdl_create(screen);
 		cairo_save(cr);
