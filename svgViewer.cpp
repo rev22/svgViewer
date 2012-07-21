@@ -3,6 +3,7 @@
  * Copyright © 2005 Red Hat, Inc.
  * Copyright © 2006 Red Hat, Inc.
  * Copyright © 2007 Red Hat, Inc.
+ * Copyright © 2011 C. A. Fitzgerald <courtney.adam.fitzgerald@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +28,7 @@
  * Authors: Kristian Høgsberg <krh@redhat.com>
  *	    Carl Worth <cworth@redhat.com>
  *	    Behdad Esfahbod <besfahbo@redhat.com>
+ *	    C. A. Fitzgerald <courtney.adam.fitzgerald@gmail.com> (http://github.com/riotopsys)
  */
 
 #include <stdio.h>
