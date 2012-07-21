@@ -1,7 +1,7 @@
 /*
  *
  * Copyright © 2005,2006,2007 Red Hat, Inc.
- * Copyright © 2011 adam <adam@tsumugi.riotopsys.dyndns.org>
+ * Copyright © 2011 C. A. Fitzgerald <courtney.adam.fitzgerald@gmail.com>
  * Copyright © 2012 Michele Bini <michele.bini@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person
@@ -28,7 +28,7 @@
  * - Kristian Høgsberg <krh@redhat.com>
  * - Carl Worth <cworth@redhat.com>
  * - Behdad Esfahbod <besfahbo@redhat.com>
- * - adam <adam@tsumugi.riotopsys.dyndns.org> (http://github.com/riotopsys)
+ * - C. A. Fitzgerald <courtney.adam.fitzgerald@gmail.com> (http://github.com/riotopsys)
  * - Michele Bini <michele.bini@gmail.com> (http;//github.com/rev22)
  */
 
